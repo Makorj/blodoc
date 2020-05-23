@@ -10,6 +10,8 @@ See examples folder for a concrete example.
 
 Compile the generator (use c++17 flag for compilation) or use the precompiled binary for your platform.
 
+Copy mainPageStyle.html in the src parent's folder and rename it indexStyle.html
+
 Then run the generator in the src parent's folder to generate the index.html.
 
 ```
@@ -36,6 +38,6 @@ Then run the generator in the src parent's folder to generate the index.html.
 
 You can use github pages to host everything as done for this repo page.
 
-## Plan for the future
+## Plans for the futur
 
 My goal is to scale it to full remote blog/documentation application with on the fly editing (without the need to compile the index.html).
