@@ -1,0 +1,235 @@
+<!-- Copyright (c) 2020 Floren Vain
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE. -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BloDoc</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.2/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@creativebulma/bulma-tooltip@1.2.0/dist/bulma-tooltip.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+</head>
+<body>
+    <progress style="position: fixed; border-radius: 0;z-index: 100000;" id="scrollProgressbar" class="progress is-small is-link" value="0" max="100"></progress>
+
+    <div style="position: fixed; bottom: 1.5rem; right: 2rem;">
+        <div class="buttons has-addons is-hidden">
+            <button class="button" data-tooltip="Share this page"><i class="fas fa-share" aria-hidden="true"></i></button>
+            <button class="button" data-tooltip="Copy link to clipboard"><i class="fas fa-link" aria-hidden="true"></i></button>
+            <button class="button" id="editToogle" onclick="enableEdit()" data-tooltip="Toogle edit mode"><i class="fas fa-edit" aria-hidden="true"></i></button>
+
+        </div>
+    </div>
+    <div class="is-hidden" style="position: fixed; bottom: 4.5rem; right: 2rem;" id="editBarButtonsGroup">
+        <div class="buttons has-addons">
+            <button class="button" id="previewToogle" data-tooltip="Toogle preview" onclick="tooglePreview()">
+                <span class="icon is-small">
+                    <i class="fas fa-eye-slash" id="tooglePreviewIcon"></i>
+                </span>
+            </button>
+            <button class="button is-success" id="textChangedStatusButton">
+                <span class="icon is-small">
+                    <i class="fas fa-check" id="textChangedStatusButtonIcon"></i>
+                </span>
+                <span id="textChangedStatusButtonText">Saved</span>
+            </button>
+
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="container" style="position:fixed; top:3rem; left: 1.5rem; bottom: 1.5rem; right : 75%">
+            <div class="columns is-gapless" style="margin-bottom: 0; height: 100%;">
+                <div class="column is-3">
+                    <aside class="menu">
+                    <p class="menu-label">
+                        Categories
+                    </p>
+                    <ul class="menu-list">
+                        [INSERT_CATEGORIES_LINK_HERE]
+                    </ul>
+                    </aside>
+                </div>
+                <div class="column">
+                    [INSERT_CATEGORY_PANELS_HERE]
+                </div>
+
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column is-one-quarter"></div>
+            <div class="column is-three-quarters">
+                <article class="message is-medium">
+                    <div class="message-body">
+                        <div class="columns">
+                            <class class="column" id="articlePreviewColumn">
+                                <div class="content is-medium" id="articleView">
+                                </div>
+                            </class>
+                            <class class="column is-hidden" id="articleContentColumn">
+                                <textarea class="textarea has-fixed-size" style="height: 90vh;" id="articleContent" placeholder="e.g. Hello world"></textarea>
+                            </class>
+                        </div>
+                      </div>
+                </article>
+            </div>
+          </div>
+
+
+
+    </section>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js"></script>
+    <script>
+        // When the user scrolls the page, execute myFunction
+        window.onscroll = function() {myFunction()};
+
+        function myFunction() {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = (winScroll / height) * 100;
+        document.getElementById("scrollProgressbar").value = scrolled;
+        }
+
+        showdown.setFlavor('github');
+        document.getElementById('articleContent').onkeyup = function() {convert(); autosave()};
+
+        function convert()
+        {
+            var text = document.getElementById('articleContent').value,
+            target = document.getElementById('articleView'),
+            converter = new showdown.Converter(),
+            html = converter.makeHtml(text);
+
+            target.innerHTML = html;
+        }
+
+        function loadPage(elem)
+        {
+            if(document.getElementsByClassName('panel-block is-active')[0] == elem)
+            {
+                return;
+            }
+
+            document.getElementsByClassName('panel-block is-active')[0].classList.remove("has-background-link");
+            document.getElementsByClassName('panel-block is-active')[0].classList.remove("has-text-light");
+            document.getElementsByClassName('panel-block is-active')[0].classList.remove("is-active");
+            elem.classList.add('is-active');
+            elem.classList.add('has-text-light');
+            elem.classList.add('has-background-link');
+
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                document.getElementById("articleContent").value =
+                this.responseText;
+                convert();
+                }
+            };
+            xhttp.open("GET", elem.getAttribute('link'), true);
+            xhttp.send();
+        }
+
+        var isPreviewEnable = true;
+        function tooglePreview()
+        {
+            if(isPreviewEnable)
+            {
+                //disable preview
+                document.getElementById('articlePreviewColumn').classList.add('is-hidden');
+                document.getElementById('previewToogle').classList.remove('is-primary');
+                document.getElementById('tooglePreviewIcon').classList.replace('fa-eye', 'fa-eye-slash');
+            }
+            else
+            {
+                //enable preview
+                document.getElementById('articlePreviewColumn').classList.remove('is-hidden');
+                document.getElementById('previewToogle').classList.add('is-primary');
+                document.getElementById('tooglePreviewIcon').classList.replace('fa-eye-slash', 'fa-eye');
+            }
+
+            isPreviewEnable = !isPreviewEnable;
+        }
+
+        var isEditEnabled = false;
+        function enableEdit()
+        {
+            if(isEditEnabled)
+            {
+                document.getElementById('editToogle').classList.remove('is-primary');
+                document.getElementById('editBarButtonsGroup').classList.add('is-hidden');
+                document.getElementById('articleContentColumn').classList.add('is-hidden');
+                document.getElementById('articlePreviewColumn').classList.remove('is-hidden');
+
+                isPreviewEnable = true;
+            }
+            else
+            {
+                document.getElementById('editToogle').classList.add('is-primary');
+                document.getElementById('editBarButtonsGroup').classList.remove('is-hidden');
+                document.getElementById('articleContentColumn').classList.remove('is-hidden');
+                document.getElementById('articlePreviewColumn').classList.add('is-hidden');
+                isPreviewEnable = false;
+
+            }
+
+            isEditEnabled = !isEditEnabled;
+        }
+
+
+        var timeoutId;
+        function autosave()
+        {
+            console.log("hello");
+            document.getElementById('textChangedStatusButton').classList.replace('is-success', 'is-warning');
+            document.getElementById('textChangedStatusButtonIcon').classList.replace('fa-check', 'fa-exclamation-triangle');
+            document.getElementById('textChangedStatusButtonText').innerText = 'Modified';
+
+            // If a timer was already started, clear it.
+            if (timeoutId) clearTimeout(timeoutId);
+
+            // Set timer that will save when it fires.
+            timeoutId = setTimeout(function () {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        document.getElementById("articleContent").value =
+                        this.responseText;
+
+
+                        document.getElementById('textChangedStatusButton').classList.replace('is-warning', 'is-success');
+                        document.getElementById('textChangedStatusButtonIcon').classList.replace('fa-exclamation-triangle', 'fa-check');
+                        document.getElementById('textChangedStatusButtonText').innerText = 'Saved';
+                    }
+                };
+                xhttp.open("GET", elem.getAttribute('link'), true);
+                xhttp.send();
+
+                document.getElementById('textChangedStatusButton').classList.add('is-loading');
+            }, 750);
+        }
+
+        convert();
+    </script>
+</body>
+</html>
